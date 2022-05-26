@@ -2281,7 +2281,7 @@ version: 4.7.2
     license: MIT
     author: NAVER Corp.
     repository: https://github.com/naver/egjs-axes
-    version: 3.2.1
+    version: 3.2.2
     */
 
     /*! *****************************************************************************
@@ -4893,7 +4893,7 @@ version: 4.7.2
        */
 
 
-      Axes.VERSION = "3.2.1";
+      Axes.VERSION = "3.2.2";
       /* eslint-enable */
 
       /**
@@ -4968,6 +4968,8 @@ version: 4.7.2
       Axes.DIRECTION_ALL = DIRECTION_ALL;
       return Axes;
     }(Component);
+
+    /* eslint-disable @typescript-eslint/no-empty-function */
 
     var getDirectionByAngle = function (angle, thresholdAngle) {
       if (thresholdAngle < 0 || thresholdAngle > 90) {
@@ -5306,16 +5308,22 @@ version: 4.7.2
         var activeEvent = convertInputType(this.options.inputType);
 
         if (!activeEvent) {
-          throw new Error("There is currently no inputType available for current device. There must be at least one available inputType.");
+          return;
         }
 
         this._observer = observer;
         this._enabled = true;
         this._activeEvent = activeEvent;
-        activeEvent === null || activeEvent === void 0 ? void 0 : activeEvent.start.forEach(function (event) {
+        activeEvent.start.forEach(function (event) {
           var _a;
 
           (_a = _this.element) === null || _a === void 0 ? void 0 : _a.addEventListener(event, _this._onPanstart);
+        }); // adding event listener to element prevents invalid behavior in iOS Safari
+
+        activeEvent.move.forEach(function (event) {
+          var _a;
+
+          (_a = _this.element) === null || _a === void 0 ? void 0 : _a.addEventListener(event, function () {});
         });
       };
 
@@ -5327,6 +5335,11 @@ version: 4.7.2
           var _a;
 
           (_a = _this.element) === null || _a === void 0 ? void 0 : _a.removeEventListener(event, _this._onPanstart);
+        });
+        activeEvent === null || activeEvent === void 0 ? void 0 : activeEvent.move.forEach(function (event) {
+          var _a;
+
+          (_a = _this.element) === null || _a === void 0 ? void 0 : _a.removeEventListener(event, function () {});
         });
         this._enabled = false;
         this._observer = null;
