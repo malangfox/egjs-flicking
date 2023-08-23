@@ -3,6 +3,7 @@ const buildHelper = require("@egjs/build-helper");
 const defaultOptions = {
   tsconfig: "tsconfig.build.json",
   sourcemap: true,
+  banner: `'use client'`,
 };
 export default buildHelper([
   {
