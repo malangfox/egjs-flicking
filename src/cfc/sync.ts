@@ -81,7 +81,7 @@ export default (flicking: Flicking, diffResult: DiffResult<any>, rendered: any[]
     });
 
     if (startIdx >= 0) {
-      added.push(...batchInsert(renderer, diffResult, addedElements, startIdx));
+      added.push(...batchInsert(renderer, diffResult, addedElements.slice(startIdx), startIdx));
     }
   }
 
