@@ -1099,6 +1099,9 @@ version: 4.12.0
     var setSize = function (el, _a) {
       var width = _a.width,
         height = _a.height;
+      if (!el) {
+        return;
+      }
       if (width != null) {
         if (isString(width)) {
           el.style.width = width;
@@ -5805,6 +5808,9 @@ version: 4.12.0
           axesEvent = ctx.axesEvent,
           transitTo = ctx.transitTo;
         var inputEvent = axesEvent.inputEvent;
+        if (!inputEvent) {
+          return;
+        }
         var offset = flicking.horizontal ? inputEvent.offsetX : inputEvent.offsetY;
         var moveStartEvent = new ComponentEvent$1(EVENTS.MOVE_START, {
           isTrusted: axesEvent.isTrusted,
@@ -10568,6 +10574,9 @@ version: 4.12.0
         var flicking = this._flicking;
         var horizontal = flicking.horizontal,
           useFractionalSize = flicking.useFractionalSize;
+        if (!el) {
+          return this;
+        }
         if (cached) {
           this._size = cached.size;
           this._margin = __assign$2({}, cached.margin);
@@ -12989,7 +12998,7 @@ version: 4.12.0
         var defaultPanel = renderer.getPanel(this._defaultIndex) || renderer.getPanel(0);
         if (!defaultPanel) return;
         var nearestAnchor = camera.findNearestAnchor(defaultPanel.position);
-        var initialPanel = nearestAnchor && defaultPanel.index !== nearestAnchor.panel.index ? nearestAnchor.panel : defaultPanel;
+        var initialPanel = nearestAnchor && defaultPanel.position !== nearestAnchor.panel.position && defaultPanel.index !== nearestAnchor.panel.index ? nearestAnchor.panel : defaultPanel;
         control.setActive(initialPanel, null, false);
         if (!nearestAnchor) {
           throw new FlickingError(MESSAGE.POSITION_NOT_REACHABLE(initialPanel.position), CODE.POSITION_NOT_REACHABLE);
@@ -13054,7 +13063,9 @@ version: 4.12.0
       MOVE: "sideMove",
       MOVE_END: "sideMoveEnd",
       WILL_CHANGE: "sideWillChange",
-      CHANGED: "sideChanged"
+      CHANGED: "sideChanged",
+      WILL_RESTORE: "sideWillRestore",
+      RESTORED: "sideRestored"
     };
     var CrossFlicking = /*#__PURE__*/function (_super) {
       __extends$3(CrossFlicking, _super);
@@ -13080,7 +13091,8 @@ version: 4.12.0
           if (!_this._disableSlideOnHold) {
             return;
           }
-          var threshold = draggable ? _this.dragThreshold && _this.dragThreshold >= 10 ? _this.dragThreshold : 10 : Infinity;
+          var dragThreshold = _this._originalDragThreshold;
+          var threshold = draggable ? dragThreshold && dragThreshold >= 10 ? dragThreshold : 10 : Infinity;
           if (direction === MOVE_DIRECTION.HORIZONTAL === _this.horizontal) {
             _this.dragThreshold = threshold;
           } else if (direction === MOVE_DIRECTION.VERTICAL === _this.horizontal) {
@@ -13110,6 +13122,9 @@ version: 4.12.0
               }
             }
           });
+        };
+        _this._addSideIndex = function (e) {
+          e.sideIndex = _this._sideFlicking[e.index].index;
         };
         _this._onHorizontalHoldStart = function () {
           _this._setDraggable(MOVE_DIRECTION.HORIZONTAL, true);
@@ -13170,6 +13185,7 @@ version: 4.12.0
         // Internal states
         _this._moveDirection = null;
         _this._nextIndex = 0;
+        _this._originalDragThreshold = _this.dragThreshold;
         // Bind options
         _this._sideOptions = sideOptions;
         _this._preserveIndex = preserveIndex;
@@ -13182,6 +13198,15 @@ version: 4.12.0
         // Components
         get: function () {
           return this._sideFlicking;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      Object.defineProperty(__proto, "sideIndex", {
+        get: function () {
+          return this._sideFlicking.map(function (i) {
+            return i.index;
+          });
         },
         enumerable: false,
         configurable: true
@@ -13254,6 +13279,9 @@ version: 4.12.0
         this.on(EVENTS.HOLD_START, this._onHorizontalHoldStart);
         this.on(EVENTS.MOVE, this._onHorizontalMove);
         this.on(EVENTS.MOVE_END, this._onHorizontalMoveEnd);
+        [EVENTS.CHANGED, EVENTS.WILL_CHANGE].forEach(function (event) {
+          _this.on(event, _this._addSideIndex);
+        });
         this._sideFlicking.forEach(function (flicking, mainIndex) {
           flicking.on(EVENTS.HOLD_START, _this._onSideHoldStart);
           flicking.on(EVENTS.MOVE, _this._onSideMove);
