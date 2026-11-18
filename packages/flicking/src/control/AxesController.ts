@@ -26,7 +26,7 @@ class AxesController {
 
   private _animatingContext: { start: number; end: number; offset: number };
   private _dragged: boolean;
-  private _isImmediate: boolean;
+  private _preventClick: boolean;
 
   /**
    * An {@link https://naver.github.io/egjs-axes/docs/api/Axes | Axes} instance
@@ -372,20 +372,20 @@ class AxesController {
     return new Promise((resolve, reject) => {
       const animationFinishHandler = () => {
         axes.off(AXES.EVENT.HOLD, interruptionHandler);
-        this._isImmediate = false;
         resolve();
       };
 
       const interruptionHandler = () => {
         axes.off(AXES.EVENT.FINISH, animationFinishHandler);
-        this._isImmediate = false;
         reject(new FlickingError(ERROR.MESSAGE.ANIMATION_INTERRUPTED, ERROR.CODE.ANIMATION_INTERRUPTED));
       };
 
       axes.once(AXES.EVENT.FINISH, animationFinishHandler);
       axes.once(AXES.EVENT.HOLD, interruptionHandler);
 
-      this._isImmediate = duration <= 0;
+      if (duration <= 0) {
+        this._preventClick = false;
+      }
       animate();
     });
   }
@@ -419,7 +419,7 @@ class AxesController {
     this._panInput = null;
     this._animatingContext = { start: 0, end: 0, offset: 0 };
     this._dragged = false;
-    this._isImmediate = false;
+    this._preventClick = false;
   }
 
   /**
@@ -429,16 +429,17 @@ class AxesController {
    */
   private _onAxesHold = () => {
     this._dragged = false;
+    this._preventClick = true;
   };
 
   /**
    * @internal
    * @privateRemarks
    * Handles the Axes change event to update the dragged state.
-   * A change from an instant movement (duration 0) is skipped, so it does not cancel the following click.
+   * A change from an instant movement (duration 0) does not prevent the following click.
    */
   private _onAxesChange = () => {
-    if (this._isImmediate) return;
+    if (!this._preventClick) return;
 
     this._dragged = !!this._panInput?.isEnabled();
   };
